@@ -21,6 +21,8 @@
     WHC_GestureUnlockScreenVC  * vc;
     UIButton *_centerButton;
     UIButton *_preButton;
+    UIButton *_preSelectButton;
+    UIButton *_nextSelectButton;
     NSInteger _buttonIndex;
     UIPanGestureRecognizer *_selectPanGestureRecognizer;
     BOOL _isLeftTop;
@@ -58,6 +60,8 @@
 
 @property (strong, nonatomic) CAShapeLayer *lineLayer;
 @property (strong, nonatomic) NSMutableArray *pointsButtons;
+@property (weak, nonatomic) IBOutlet UIButton *deleteButton;
+@property (strong, nonatomic) NSMutableArray *lineLayers;
 @end
 
 @implementation ViewController
@@ -68,6 +72,13 @@
         _pointsButtons = [NSMutableArray array];
     }
     return _pointsButtons;
+}
+
+- (NSMutableArray *)lineLayers{
+    if (!_lineLayers) {
+        _lineLayers = [NSMutableArray array];
+    }
+    return _lineLayers;
 }
 
 - (void)viewDidLoad {
@@ -91,6 +102,7 @@
     
     self.backgroundView.backgroundColor = [UIColor grayColor];
     _centerButton = [[UIButton alloc] init];
+    _centerButton.selected = NO;
     _centerButton.backgroundColor = [UIColor whiteColor];
     _centerButton.width = viewW;
     _centerButton.height = viewW;
@@ -98,6 +110,9 @@
     _centerButton.y = 0.5*(self.backgroundView.height - _centerButton.height);
     _centerButton.layer.cornerRadius = 10;
     _centerButton.layer.masksToBounds = YES;
+    [_centerButton setTitle:@"1" forState:UIControlStateNormal];
+    [_centerButton setTitleColor:[UIColor clearColor] forState:UIControlStateNormal];
+    [_centerButton addTarget:self action:@selector(selectButtonClick:) forControlEvents:UIControlEventTouchUpInside];
     [self.backgroundView addSubview:_centerButton];
     [self.pointsButtons addObject:_centerButton];
     [self setUpButtons];
@@ -119,7 +134,7 @@
     recognizer.view.center = newCenter;
     [recognizer setTranslation:CGPointZero inView:self.backgroundView];
     self.locationLabel.text = [NSString stringWithFormat:@"选中位置:(%.1f,%.1f)",self.selectButton.centerX,self.selectButton.centerY];
-    [self linedraw:_preButton isMove:YES];
+    [self linedraw:nil isMove:YES];
     
 }
 
@@ -289,26 +304,52 @@
     }
     
     [tempButton addTarget:self action:@selector(selectButtonClick:) forControlEvents:UIControlEventTouchUpInside];
-    if (2 == _buttonIndex) {
+    tempButton.selected = NO;
+//    if (2 == _buttonIndex) {
         [self selectButtonClick:tempButton];
+    [self.pointsButtons addObject:tempButton];
+    if (self.pointsButtons.count>3) {
+        self.deleteButton.hidden = YES;
     }
+//    }
 
     [self linedraw:_preButton isMove:NO];
 }
 
 - (void)selectButtonClick:(UIButton *)selectButton{
+    NSInteger indexValue = [selectButton.titleLabel.text integerValue]-1;
+    if (0 == indexValue) {
+        _preSelectButton = nil;
+    }else{
+        _preSelectButton = self.pointsButtons[indexValue-1];
+    }
+    
+    if (indexValue<self.pointsButtons.count-1) {
+        _nextSelectButton = self.pointsButtons[indexValue+1];
+    }else{
+        _nextSelectButton = nil;
+    }
     for (UIButton *tempButton in self.pointsButtons) {
         if (tempButton.selected) {
             tempButton.selected = NO;
+            [tempButton setBackgroundColor:[UIColor whiteColor]];
+            [tempButton removeGestureRecognizer:_selectPanGestureRecognizer];
         }
-        NSLog(@"selectButtonClick>> %@ -- %d",tempButton,tempButton.selected);
+        
     }
     self.selectButton = selectButton;
-    [self.pointsButtons addObject:selectButton];
-    [selectButton setBackgroundColor:[UIColor blueColor]];
+    selectButton.selected = !selectButton.selected;
+    if (selectButton.selected) {
+      
+        [selectButton setBackgroundColor:[UIColor blueColor]];
+    }else{
+        [selectButton setBackgroundColor:[UIColor whiteColor]];
+    }
     
-    UIPanGestureRecognizer *selectPanGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(doMoveAction:)];
-    [self.selectButton addGestureRecognizer:selectPanGestureRecognizer];
+    
+    _selectPanGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(doMoveAction:)];
+    [self.selectButton addGestureRecognizer:_selectPanGestureRecognizer];
+    NSLog(@"selectButtonClick>> %@",self.pointsButtons);
 }
 
 //往上走
@@ -337,32 +378,84 @@
 }
 
 - (void)linedraw:(UIButton *)tempButton isMove:(BOOL)isMove{
+    NSInteger indexValue = [self.selectButton.titleLabel.text integerValue]-1;
+    UIButton *preButton = nil;
+    UIButton *nextButton = nil;
     if (isMove) {
-        [self.lineLayer removeFromSuperlayer];
+//        [self.lineLayer removeFromSuperlayer];
+        if (self.pointsButtons.count-1 == indexValue) {
+            preButton = self.pointsButtons[indexValue-1];
+            CAShapeLayer *lineLayer = self.lineLayers[indexValue-1];
+            UIBezierPath *linePath = [UIBezierPath bezierPath];
+            [linePath moveToPoint:preButton.center];
+            [linePath addLineToPoint:self.selectButton.center];
+            lineLayer.path = linePath.CGPath;
+            [self.backgroundView setNeedsDisplay];
+        }else if (0 == indexValue) {
+            nextButton = self.pointsButtons[indexValue+1];
+            CAShapeLayer *lineLayer = self.lineLayers[indexValue];
+            UIBezierPath *linePath = [UIBezierPath bezierPath];
+            [linePath moveToPoint:nextButton.center];
+            [linePath addLineToPoint:self.selectButton.center];
+            lineLayer.path = linePath.CGPath;
+            [self.backgroundView setNeedsDisplay];
+        }else{
+            preButton = self.pointsButtons[indexValue-1];
+            CAShapeLayer *lineLayer = self.lineLayers[indexValue-1];
+            UIBezierPath *linePath = [UIBezierPath bezierPath];
+            [linePath moveToPoint:preButton.center];
+            [linePath addLineToPoint:self.selectButton.center];
+            lineLayer.path = linePath.CGPath;
+            
+            nextButton = self.pointsButtons[indexValue+1];
+            CAShapeLayer *lineLayer2 = self.lineLayers[indexValue];
+            UIBezierPath *linePath2 = [UIBezierPath bezierPath];
+            [linePath2 moveToPoint:nextButton.center];
+            [linePath2 addLineToPoint:self.selectButton.center];
+            lineLayer2.path = linePath2.CGPath;
+            [self.backgroundView setNeedsDisplay];
+        }
+    }else{
+        // 线的路径
+        UIBezierPath *linePath = [UIBezierPath bezierPath];
+        
+        [linePath moveToPoint:tempButton.center];
+        // 其他点
+        [linePath addLineToPoint:self.selectButton.center];
+        
+        CAShapeLayer *lineLayer = [CAShapeLayer layer];
+        self.lineLayer = lineLayer;
+        lineLayer.lineWidth = 2;
+        lineLayer.strokeColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3].CGColor;
+        lineLayer.path = linePath.CGPath;
+        lineLayer.fillColor = nil; // 默认为blackColor
+        
+        
+        [self.backgroundView.layer addSublayer:lineLayer];
+        [self.backgroundView setNeedsDisplay];
+        [self.lineLayers addObject:lineLayer];
     }
     
     
-    // 线的路径
-    UIBezierPath *linePath = [UIBezierPath bezierPath];
-    // 起点
-//    CGPoint startPoint = CGPointMake(self.selectButton.centerX, <#CGFloat y#>)
-    [linePath moveToPoint:tempButton.center];
-    // 其他点
-    [linePath addLineToPoint:self.selectButton.center];
     
-    CAShapeLayer *lineLayer = [CAShapeLayer layer];
-    self.lineLayer = lineLayer;
-    lineLayer.lineWidth = 2;
-    lineLayer.strokeColor = [[UIColor whiteColor] colorWithAlphaComponent:0.3].CGColor;
-    lineLayer.path = linePath.CGPath;
-    lineLayer.fillColor = nil; // 默认为blackColor
-    
-    
-    [self.backgroundView.layer addSublayer:lineLayer];
-    [self.backgroundView setNeedsDisplay];
 }
 
 - (IBAction)deleteBtnClick:(UIButton *)sender {
+    for (int i = 0; i<self.pointsButtons.count; i++) {
+        UIButton *button = self.pointsButtons[i];
+        if (button == self.selectButton) {
+            [button removeFromSuperview];
+            CAShapeLayer *lineLayer = self.lineLayers[i-1];
+            [lineLayer removeFromSuperlayer];
+            [self.pointsButtons removeObject:button];
+            
+            if (2 == self.pointsButtons.count) {
+                self.deleteButton.hidden = YES;
+            }else{
+                self.deleteButton.hidden = NO;
+            }
+        }
+    }
 }
 
 - (void)alert:(NSString *)msg{

@@ -17,6 +17,7 @@
                 <outlet property="btn2" destination="RbA-jz-zx2" id="iZE-Hb-8bf"/>
                 <outlet property="btn3" destination="e6U-QI-gHc" id="WYQ-cZ-6J7"/>
                 <outlet property="btn4" destination="l5j-ze-uIS" id="En6-ss-Qby"/>
+                <outlet property="deleteButton" destination="Ucj-XH-zZA" id="bwC-p7-2UZ"/>
                 <outlet property="locationLabel" destination="vqF-Ia-ugq" id="BVH-dW-T2B"/>
                 <outlet property="view" destination="iN0-l3-epB" id="naf-9p-VRD"/>
             </connections>
@@ -100,7 +101,7 @@
                 </label>
             </subviews>
             <color key="backgroundColor" white="0.33333333333333331" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-            <point key="canvasLocation" x="-224.5" y="164.5"/>
+            <point key="canvasLocation" x="6" y="131"/>
         </view>
     </objects>
 </document>
