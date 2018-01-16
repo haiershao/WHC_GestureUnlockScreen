@@ -441,14 +441,54 @@
 }
 
 - (IBAction)deleteBtnClick:(UIButton *)sender {
+    UIButton *preButton = nil;
+    UIButton *nextButton = nil;
     for (int i = 0; i<self.pointsButtons.count; i++) {
         UIButton *button = self.pointsButtons[i];
+        
         if (button == self.selectButton) {
             [button removeFromSuperview];
-            CAShapeLayer *lineLayer = self.lineLayers[i-1];
-            [lineLayer removeFromSuperlayer];
-            [self.pointsButtons removeObject:button];
+            NSInteger indexValue = [button.titleLabel.text integerValue]-1;
+            if (indexValue == self.pointsButtons.count-1) {
+                CAShapeLayer *lineLayer = self.lineLayers[i-1];
+                [lineLayer removeFromSuperlayer];
+                preButton = self.pointsButtons[i-1];
+                preButton.selected = YES;
+                self.selectButton = preButton;
+                [preButton setBackgroundColor:[UIColor blueColor]];
+                
+                [self.lineLayers removeObjectAtIndex:i-1];
+                [self.pointsButtons removeObject:button];
+//                for (int i = 0; i<self.pointsButtons.count; i++) {
+//                    UIButton *tempButton = self.pointsButtons[i];
+//                    [tempButton setTitle:[NSString stringWithFormat:@"%d",i] forState:UIControlStateNormal];
+//                }
+            }else if(0 == indexValue){
+                
+            }else{
+                CAShapeLayer *preLineLayer = self.lineLayers[i-1];
+                [preLineLayer removeFromSuperlayer];
+                
+                CAShapeLayer *nextLineLayer = self.lineLayers[i];
+                [nextLineLayer removeFromSuperlayer];
+                
+                
+                preButton = self.pointsButtons[i-1];
+                preButton.selected = YES;
+                self.selectButton = preButton;
+                nextButton = self.pointsButtons[i+1];
+                [preButton setBackgroundColor:[UIColor blueColor]];
+                [self.lineLayers removeObjectAtIndex:i];
+                [self.pointsButtons removeObject:button];
+                [self.lineLayers removeObjectAtIndex:i-1];
+                for (int i = 0; i<self.pointsButtons.count; i++) {
+                    UIButton *tempButton = self.pointsButtons[i];
+                    [tempButton setTitle:[NSString stringWithFormat:@"%d",i] forState:UIControlStateNormal];
+                }
+                [self linedraw:nextButton isMove:NO];
+            }
             
+
             if (2 == self.pointsButtons.count) {
                 self.deleteButton.hidden = YES;
             }else{
